@@ -72,6 +72,7 @@ set(${dir_LIB_SOURCES}
 	GeneralisedObjectiveFunction 
 	PoissonLogLikelihoodWithLinearModelForMean 
 	PoissonLogLikelihoodWithLinearModelForMeanAndProjData 
+        KernelisedPoissonLogLikelihoodWithLinearModelForMeanAndProjData
 	PoissonLogLikelihoodWithLinearModelForMeanAndListModeData 
 	PoissonLogLikelihoodWithLinearModelForMeanAndListModeDataWithProjMatrixByBin 
         PoissonLogLikelihoodWithLinearKineticModelAndDynamicProjectionData	
