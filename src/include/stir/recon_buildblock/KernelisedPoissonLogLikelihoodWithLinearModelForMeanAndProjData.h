@@ -49,7 +49,6 @@ class DistributedCachingInformation;
 //#endif
 
 
-
 /*!
   \ingroup GeneralisedObjectiveFunction
   \brief An objective function class appropriate for PET emission data
@@ -237,6 +236,7 @@ public:
    shared_ptr<TargetT>& get_kpnorm_sptr();
    shared_ptr<TargetT>& get_kmnorm_sptr();
    shared_ptr<TargetT>& get_anatomical1_sptr();
+   shared_ptr<TargetT>& get_nkernel_sptr();
    const TimeFrameDefinitions& get_time_frame_definitions() const;
   const BinNormalisation& get_normalisation() const;
   const shared_ptr<BinNormalisation>& get_normalisation_sptr() const;
@@ -256,6 +256,7 @@ public:
   void set_kpnorm_sptr(shared_ptr<TargetT>&);
   void set_kmnorm_sptr(shared_ptr<TargetT>&);
   void set_anatomical1_sptr(shared_ptr<TargetT>&);
+  void set_nkernel_sptr(shared_ptr<TargetT>&);
   void set_proj_data_sptr(const shared_ptr<ProjData>&);
   void set_max_segment_num_to_process(const int);
   void set_zero_seg0_end_planes(const bool);
@@ -333,7 +334,7 @@ protected:
  std::string anatomical1_image_filename;
   mutable Array<3,float> distance;
   double kSt_dev;
-  shared_ptr<TargetT> anatomical1_sptr;
+  shared_ptr<TargetT> anatomical1_sptr, nkernel_sptr;
   shared_ptr<TargetT> kpnorm_sptr,kmnorm_sptr;
  //kernel parameters
   int neighbours_num,num_non_zero_feat,num_elem_neighbourhood,num_voxels,dimz,dimy,dimx;
@@ -429,6 +430,10 @@ protected:
 
   void add_view_seg_to_sensitivity(TargetT& sensitivity, const ViewSegmentNumbers& view_seg_nums) const;
   friend void RPC_process_related_viewgrams_gradient();
+
+/*! Create a matrix containing the normalisation of the anatomical part of the kernel  matrix */
+/*! For the PET image this is calculate in the loop*/
+   void calculate_normalization_kernel(TargetT &nKernel);
 
 /*! Create a matrix containing the norm of the difference between two feature vectors, \f$ \|  \boldsymbol{z}^{(n)}_j-\boldsymbol{z}^{(n)}_l \| \f$. */
 /*! This is done for the PET image which keeps changing*/
