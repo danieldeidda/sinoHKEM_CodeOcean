@@ -1188,7 +1188,7 @@ void KernelisedPoissonLogLikelihoodWithLinearModelForMeanAndProjData<TargetT>::e
 {
     double kmean=0;
     double kStand_dev=0;
-    double dim_x=0, dim_y=0, dim_z=0;
+    double dim_z=0;
     int nv=0;
     const int min_z = (*anatomical1_sptr).get_min_index();
     const int max_z = (*anatomical1_sptr).get_max_index();
@@ -1200,16 +1200,18 @@ void KernelisedPoissonLogLikelihoodWithLinearModelForMeanAndProjData<TargetT>::e
 
             const int min_y = (*anatomical1_sptr)[z].get_min_index();
             const int max_y = (*anatomical1_sptr)[z].get_max_index();
+            double dim_y=0;
 
-             dim_y = max_y -min_y+1;
+            dim_y = max_y -min_y+1;
 
               for (int y=min_y;y<= max_y;y++)
                 {
 
                   const int min_x = (*anatomical1_sptr)[z][y].get_min_index();
                   const int max_x = (*anatomical1_sptr)[z][y].get_max_index();
+                  double dim_x=0;
 
-                   dim_x = max_x -min_x +1;
+                  dim_x = max_x -min_x +1;
 
                    this->num_voxels = dim_z*dim_y*dim_x;
 
