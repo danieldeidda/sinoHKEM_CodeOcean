@@ -1332,61 +1332,69 @@ void KernelisedPoissonLogLikelihoodWithLinearModelForMeanAndProjData<TargetT>::c
        const int max_z = current_estimate.get_max_index();
 
        for (int z=min_z; z<=max_z; z++)
-         {
-           const int min_dz = max(distance.get_min_index(), min_z-z);
-           const int max_dz = min(distance.get_max_index(), max_z-z);
+       { double pnkernel=0;
+         const int min_dz = max(distance.get_min_index(), min_z-z);
+         const int max_dz = min(distance.get_max_index(), max_z-z);
 
-           const int min_y = current_estimate[z].get_min_index();
-           const int max_y = current_estimate[z].get_max_index();
+         const int min_y = current_estimate[z].get_min_index();
+         const int max_y = current_estimate[z].get_max_index();
 
 
-             for (int y=min_y;y<= max_y;y++)
-               {
-                 const int min_dy = max(distance[0].get_min_index(), min_y-y);
-                 const int max_dy = min(distance[0].get_max_index(), max_y-y);
+           for (int y=min_y;y<= max_y;y++)
+             {
+               const int min_dy = max(distance[0].get_min_index(), min_y-y);
+               const int max_dy = min(distance[0].get_max_index(), max_y-y);
 
-                 const int min_x = current_estimate[z][y].get_min_index();
-                 const int max_x = current_estimate[z][y].get_max_index();
+               const int min_x = current_estimate[z][y].get_min_index();
+               const int max_x = current_estimate[z][y].get_max_index();
 
 
 for (int x=min_x;x<= max_x;x++)
-                   {
-                     const int min_dx = max(distance[0][0].get_min_index(), min_x-x);
-                     const int max_dx = min(distance[0][0].get_max_index(), max_x-x);
+                 {
+                   const int min_dx = max(distance[0][0].get_min_index(), min_x-x);
+                   const int max_dx = min(distance[0][0].get_max_index(), max_x-x);
 
 
-                     l=(z-min_z)*(max_x-min_x +1)*(max_y-min_y +1) + (y-min_y)*(max_x-min_x +1) + (x-min_x);
+                   l=(z-min_z)*(max_x-min_x +1)*(max_y-min_y +1) + (y-min_y)*(max_x-min_x +1) + (x-min_x);
 
 
-                     for (int dz=min_dz;dz<=max_dz;++dz)
-                       for (int dy=min_dy;dy<=max_dy;++dy)
-                         for (int dx=min_dx;dx<=max_dx;++dx)
-                           {
-                             m=(dz-min_dz)*(max_dx-min_dx +1)*(max_dy-min_dy +1) + (dy-min_dy)*(max_dx-min_dx +1) + (dx-min_dx);
+                   for (int dz=min_dz;dz<=max_dz;++dz)
+                     for (int dy=min_dy;dy<=max_dy;++dy)
+                       for (int dx=min_dx;dx<=max_dx;++dx)
+                         {
+                           m=(dz-min_dz)*(max_dx-min_dx +1)*(max_dy-min_dy +1) + (dy-min_dy)*(max_dx-min_dx +1) + (dx-min_dx);
 
-                             if (get_hybrid()){
+                           if (get_hybrid()){
 
-                                 if(current_estimate[z][y][x]==0){
-                                      continue;
-                                 }
-                                 else{
-                                 kPET=exp(-(*this->kpnorm_sptr)[0][l][m]/square(current_estimate[z][y][x]*get_PETkernel_par())/2)*exp(-square(distance[dz][dy][dx]/grid_spacing.x ())/(2*square(get_Ndistance_par())));
-                                    }
-                                              }
-                     else{
-                         kPET=1;
-                     }    // the following "pnkernel" is the normalisation of the PET part of the kernel
-                             pnkernel+=kPET;
-                             kImage[z][y][x] += exp(-(*this->kmnorm_sptr)[0][l][m]/square(kSD*kernel_par)/2)*exp(-square(distance[dz][dy][dx]/grid_spacing.x ())/(2*square(Nmdistance_par)))*kPET*Image[z+dz][y+dy][x+dx]/(*nkernel_sptr)[z][y][x];
-                            }
-                             if(current_estimate[z][y][x]==0){
-                                  continue;}
+                               if(current_estimate[z][y][x]==0){
+                                    continue;
 
-                              kImage[z][y][x]= kImage[z][y][x]/pnkernel;
-                              pnkernel=0;
-                }
-             }
-         }
+                               }
+                               else{
+
+                               kPET=exp(-(*this->kpnorm_sptr)[0][l][m]/square(current_estimate[z][y][x]*get_PETkernel_par())/2)*exp(-square(distance[dz][dy][dx]/grid_spacing.x ())/(2*square(get_Ndistance_par())));
+}
+
+                   }
+                   else{
+                       kPET=1;
+
+                   }
+
+                   kImage[z][y][x] += exp(-(*this->kmnorm_sptr)[0][l][m]/square(kSD*kernel_par)/2)*exp(-square(distance[dz][dy][dx]/grid_spacing.x ())/(2*square(Nmdistance_par)))*kPET*Image[z+dz][y+dy][x+dx];
+
+                   pnkernel += exp(-(*this->kmnorm_sptr)[0][l][m]/square(kSD*kernel_par)/2)*exp(-square(distance[dz][dy][dx]/grid_spacing.x ())/(2*square(Nmdistance_par)))*kPET;
+                  }
+                   if(current_estimate[z][y][x]==0){
+//                                            std::cout<<"position z y x"<<z<<" "<<y<<" "<<x<<std::endl;
+                        continue;}
+                   kImage[z][y][x]=kImage[z][y][x]/pnkernel;
+                   pnkernel=0;
+
+
+              }
+           }
+     }
 }
 
 
