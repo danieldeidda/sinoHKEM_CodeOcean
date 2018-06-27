@@ -300,11 +300,6 @@ post_processing()
 
       this->set_kpnorm_sptr (normp_sptr);
       this->set_kmnorm_sptr (normm_sptr);
-
-      // calculate anatomical normalization for the kernel
-      calculate_normalization_kernel (*this->nkernel_sptr);
-      set_nkernel_sptr (nkernel_sptr);
-       // write_to_file("norm", *nkernel_sptr);
   }
   if (this->additive_projection_data_filename != "0")
   {
@@ -861,93 +856,6 @@ set_up_before_sensitivity(shared_ptr<TargetT > const& target_sptr)
 // finally the Kernelised image
 
 template<typename TargetT>
-void
-KernelisedPoissonLogLikelihoodWithLinearModelForMeanAndProjData<TargetT>::calculate_normalization_kernel(TargetT& nKernel)
-{
-
-         const DiscretisedDensityOnCartesianGrid<3,float>* current_anatomical1_cast =
-            dynamic_cast< const DiscretisedDensityOnCartesianGrid<3,float> *>(this->get_anatomical1_sptr ().get());
-         const CartesianCoordinate3D<float>& grid_spacing = current_anatomical1_cast->get_grid_spacing();
-
-         int min_dz, max_dz,min_dx,max_dx, min_dy,max_dy;
-
-          if (only_2D)
-            {
-              min_dz = max_dz = 0;
-            }
-          else
-            {
-              min_dz = -(neighbours_num-1)/2;
-              max_dz = (neighbours_num-1)/2;
-            }
-          min_dy = -(neighbours_num-1)/2;
-          max_dy = (neighbours_num-1)/2;
-          min_dx = -(neighbours_num-1)/2;
-          max_dx = (neighbours_num-1)/2;
-
-     Array<3,float> distance = Array<3,float>(IndexRange3D(min_dz,max_dz,min_dy,max_dy,min_dx,max_dx));
-
-          for (int z=min_dz;z<=max_dz;++z)
-            for (int y=min_dy;y<=max_dy;++y)
-              for (int x=min_dx;x<=max_dx;++x)
-                { // the distance is the euclidean distance:
-                  //at the moment is used only for the definition of the neighbourhood
-
-                      distance[z][y][x] =
-
-                        sqrt(square(x*grid_spacing.x())+
-                             square(y*grid_spacing.y())+
-                             square(z*grid_spacing.z()));
-                }
-
-   // get anatomical1 standard deviation over all voxels
-        double kSD=0;
-        kSD=get_kSD();
-
-   // calculate kernelised image
-
-                 const int min_z = (*anatomical1_sptr).get_min_index();
-                 const int max_z = (*anatomical1_sptr).get_max_index();
-
-                 for (int z=min_z; z<=max_z; z++)
-                   {
-                     const int min_dz = max(distance.get_min_index(), min_z-z);
-                     const int max_dz = min(distance.get_max_index(), max_z-z);
-
-                     const int min_y = (*anatomical1_sptr)[z].get_min_index();
-                     const int max_y = (*anatomical1_sptr)[z].get_max_index();
-
-                       for (int y=min_y;y<= max_y;y++)
-                         {
-                           const int min_dy = max(distance[0].get_min_index(), min_y-y);
-                           const int max_dy = min(distance[0].get_max_index(), max_y-y);
-
-                           const int min_x = (*anatomical1_sptr)[z][y].get_min_index();
-                           const int max_x = (*anatomical1_sptr)[z][y].get_max_index();
-
-
-          for (int x=min_x;x<= max_x;x++)
-                             {
-                               const int min_dx = max(distance[0][0].get_min_index(), min_x-x);
-                               const int max_dx = min(distance[0][0].get_max_index(), max_x-x);
-
-                               for (int dz=min_dz;dz<=max_dz;++dz)
-                                 for (int dy=min_dy;dy<=max_dy;++dy)
-                                   for (int dx=min_dx;dx<=max_dx;++dx)
-                                     {
-
-
-                               nKernel[z][y][x] += exp(-square(((*anatomical1_sptr)[z][y][x]-(*anatomical1_sptr)[z+dz][y+dy][x+dx])/kSD*kernel_par)/2)*exp(-square(distance[dz][dy][dx]/grid_spacing.x ())/(2*square(Nmdistance_par)));//(exp(-(*this->kmnorm_sptr)[0][l][0]/square(kSD*kernel_par)/2)*exp(-square(distance[dz][dy][dx]/grid_spacing.x ())));
- //std::cout<<"position z y x"<<z<<" "<<y<<" "<<nKernel[z][y][x]<<std::endl;
-                              }
-
-                          }
-                       }
-                 }
-//write_to_file("normK",nKernel);
-}
-
-template<typename TargetT>
 void KernelisedPoissonLogLikelihoodWithLinearModelForMeanAndProjData<TargetT>::calculate_norm_matrix(TargetT &normp,
                                                                                                      const int& dimf_row,
                                                                                                      int& dimf_col,
@@ -1332,7 +1240,7 @@ void KernelisedPoissonLogLikelihoodWithLinearModelForMeanAndProjData<TargetT>::c
        const int max_z = current_estimate.get_max_index();
 
        for (int z=min_z; z<=max_z; z++)
-       { double pnkernel=0;
+       { double pnkernel=0, kAnatomical1=0;
          const int min_dz = max(distance.get_min_index(), min_z-z);
          const int max_dz = min(distance.get_max_index(), max_z-z);
 
@@ -1372,7 +1280,8 @@ for (int x=min_x;x<= max_x;x++)
                                }
                                else{
 
-                               kPET=exp(-(*this->kpnorm_sptr)[0][l][m]/square(current_estimate[z][y][x]*get_PETkernel_par())/2)*exp(-square(distance[dz][dy][dx]/grid_spacing.x ())/(2*square(get_Ndistance_par())));
+                               kPET=exp(-(*this->kpnorm_sptr)[0][l][m]/square(current_estimate[z][y][x]*get_PETkernel_par())/2)*
+                                    exp(-square(distance[dz][dy][dx]/grid_spacing.x ())/(2*square(get_Ndistance_par())));
 }
 
                    }
@@ -1381,13 +1290,16 @@ for (int x=min_x;x<= max_x;x++)
 
                    }
 
-                   kImage[z][y][x] += exp(-(*this->kmnorm_sptr)[0][l][m]/square(kSD*kernel_par)/2)*exp(-square(distance[dz][dy][dx]/grid_spacing.x ())/(2*square(Nmdistance_par)))*kPET*Image[z+dz][y+dy][x+dx];
+                   kAnatomical1=exp(-(*this->kmnorm_sptr)[0][l][m]/square(kSD*kernel_par)/2)*
+                                exp(-square(distance[dz][dy][dx]/grid_spacing.x ())/(2*square(Nmdistance_par)));
 
-                   pnkernel += exp(-(*this->kmnorm_sptr)[0][l][m]/square(kSD*kernel_par)/2)*exp(-square(distance[dz][dy][dx]/grid_spacing.x ())/(2*square(Nmdistance_par)))*kPET;
+                   kImage[z][y][x] += kAnatomical1*kPET*Image[z+dz][y+dy][x+dx];
+
+                   pnkernel += kAnatomical1*kPET;
                   }
                    if(current_estimate[z][y][x]==0){
-//                                            std::cout<<"position z y x"<<z<<" "<<y<<" "<<x<<std::endl;
                         continue;}
+
                    kImage[z][y][x]=kImage[z][y][x]/pnkernel;
                    pnkernel=0;
 
@@ -1450,7 +1362,7 @@ void KernelisedPoissonLogLikelihoodWithLinearModelForMeanAndProjData<TargetT>::f
              }
 
 // get anatomical1 standard deviation over all voxels
-     double kSD=0, pnkernel=0;
+     double kSD=0, pnkernel=0, kAnatomical1=0;
      kSD=get_kSD();
 
 // calculate kernelised image
@@ -1492,17 +1404,21 @@ void KernelisedPoissonLogLikelihoodWithLinearModelForMeanAndProjData<TargetT>::f
                                         }
                                         else{
 
-                                        kPET=exp(-square((current_estimate[z][y][x]-current_estimate[z+dz][y+dy][x+dx])/current_estimate[z][y][x]*get_PETkernel_par())/2)*exp(-square(distance[dz][dy][dx]/grid_spacing.x ())/(2*square(get_Ndistance_par())));//(exp(-(*this->kpnorm_sptr)[0][l][0]/square((current_estimate[z][y][x]*get_PETkernel_par()))/2)*exp(-square(distance[0][0][0]/grid_spacing.x ())/(2*square(get_Ndistance_par()))));
+                                        kPET=exp(-square((current_estimate[z][y][x]-current_estimate[z+dz][y+dy][x+dx])/current_estimate[z][y][x]*get_PETkernel_par())/2)*
+                                             exp(-square(distance[dz][dy][dx]/grid_spacing.x ())/(2*square(get_Ndistance_par())));
                                         }
 
                             }
                             else{
                                 kPET=1;
 
-                            }  // the following "pnkernel" is the normalisation of the PET part of the kernel
-                                    pnkernel+=kPET;
+                            }  // the following "pnkernel" is the normalisation of the kernel
+                                    kAnatomical1=exp(-square(((*anatomical1_sptr)[z][y][x]-(*anatomical1_sptr)[z+dz][y+dy][x+dx])/kSD*kernel_par)/2)*
+                                                 exp(-square(distance[dz][dy][dx]/grid_spacing.x ())/(2*square(Nmdistance_par)));
 
-                                    kImage[z][y][x] += exp(-square(((*anatomical1_sptr)[z][y][x]-(*anatomical1_sptr)[z+dz][y+dy][x+dx])/kSD*kernel_par)/2)*exp(-square(distance[dz][dy][dx]/grid_spacing.x ())/(2*square(Nmdistance_par)))*kPET*Image[z+dz][y+dy][x+dx]/(*nkernel_sptr)[z][y][x];//
+                                    pnkernel+=kPET*kAnatomical1;
+
+                                    kImage[z][y][x] += kAnatomical1*kPET*Image[z+dz][y+dy][x+dx];//
 
                                    }
                                     if(current_estimate[z][y][x]==0){

@@ -431,10 +431,6 @@ protected:
   void add_view_seg_to_sensitivity(TargetT& sensitivity, const ViewSegmentNumbers& view_seg_nums) const;
   friend void RPC_process_related_viewgrams_gradient();
 
-/*! Create a matrix containing the normalisation of the anatomical part of the kernel  matrix */
-/*! For the PET image this is calculate in the loop*/
-   void calculate_normalization_kernel(TargetT &nKernel);
-
 /*! Create a matrix containing the norm of the difference between two feature vectors, \f$ \|  \boldsymbol{z}^{(n)}_j-\boldsymbol{z}^{(n)}_l \| \f$. */
 /*! This is done for the PET image which keeps changing*/
   void  calculate_norm_matrix(TargetT &normp,
