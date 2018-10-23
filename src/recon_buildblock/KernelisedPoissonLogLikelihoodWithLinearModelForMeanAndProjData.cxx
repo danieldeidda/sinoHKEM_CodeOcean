@@ -1404,7 +1404,7 @@ void KernelisedPoissonLogLikelihoodWithLinearModelForMeanAndProjData<TargetT>::f
                                         }
                                         else{
 
-                                        kPET=exp(-square((current_estimate[z][y][x]-current_estimate[z+dz][y+dy][x+dx])/current_estimate[z][y][x]*get_PETkernel_par())/2)*
+                                        kPET=exp(-square((current_estimate[z][y][x]-current_estimate[z+dz][y+dy][x+dx])/current_estimate[z][y][x]/get_PETkernel_par())/2)*
                                              exp(-square(distance[dz][dy][dx]/grid_spacing.x ())/(2*square(get_Ndistance_par())));
                                         }
 
@@ -1413,7 +1413,7 @@ void KernelisedPoissonLogLikelihoodWithLinearModelForMeanAndProjData<TargetT>::f
                                 kPET=1;
 
                             }  // the following "pnkernel" is the normalisation of the kernel
-                                    kAnatomical1=exp(-square(((*anatomical1_sptr)[z][y][x]-(*anatomical1_sptr)[z+dz][y+dy][x+dx])/kSD*kernel_par)/2)*
+                                    kAnatomical1=exp(-square(((*anatomical1_sptr)[z][y][x]-(*anatomical1_sptr)[z+dz][y+dy][x+dx])/kSD/kernel_par)/2)*
                                                  exp(-square(distance[dz][dy][dx]/grid_spacing.x ())/(2*square(Nmdistance_par)));
 
                                     pnkernel+=kPET*kAnatomical1;
